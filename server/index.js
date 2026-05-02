@@ -5,6 +5,8 @@ import { getGeminiResponse } from './gemini.js';
 
 dotenv.config();
 
+console.log("Server starting...");
+
 const app = express();
 app.use(cors());
 app.use(express.json());
