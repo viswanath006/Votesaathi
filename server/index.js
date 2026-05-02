@@ -13,6 +13,10 @@ app.use(express.json());
 
 const PORT = process.env.PORT || 5000;
 
+app.get('/', (req, res) => {
+  res.send('VoteSaathi API is running successfully!');
+});
+
 const LOCAL_FAQS = {
   "how to vote?": "Step 1: Go to the polling station.\nStep 2: Show your ID proof (Voter ID/Aadhar).\nStep 3: Press the button next to your candidate on the EVM.\nStep 4: Check the VVPAT slip.",
   "what is evm?": "An Electronic Voting Machine (EVM) is a device used to record votes electronically instead of paper ballots. It is fast, secure, and accurate.",
