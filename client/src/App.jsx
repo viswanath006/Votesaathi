@@ -1,19 +1,21 @@
-import React, { useState, useRef, useEffect, useCallback, useMemo, lazy, Suspense } from 'react';
-import { Send, Mic, Languages, User, Bot, HelpCircle, Loader2, Compass, Award, Calendar, MapPin, Info, ShieldCheck, PlayCircle, Phone, Home, BookOpen, Clock, BarChart2, MessageSquare, Search, ChevronDown, FileText } from 'lucide-react';
+import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
+import { Send, User, Bot, HelpCircle, Loader2, Compass, Award, MapPin, Info, ShieldCheck, PlayCircle, Phone, BookOpen, Clock, BarChart2, MessageSquare, Search, ChevronDown, FileText, Mic, Calendar } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
-// Import local assets
-import eciLogo from './assets/eci_logo.png';
-import voteSaathiLogo from './assets/votesaathi_logo.png';
-import chunaavLogo from './assets/chunaav_logo.png';
+// Layout components (modular architecture)
+import Header from './components/layout/Header';
+import Navigation from './components/layout/Navigation';
+import Sidebar from './components/layout/Sidebar';
+import RightPanel from './components/layout/RightPanel';
+import Footer from './components/layout/Footer';
 
-// Import extracted modules for code quality
+// Feature components
+import ChatView from './components/chat/ChatView';
+import QuizView from './components/quiz/QuizView';
+
+// Utilities
 import { SUGGESTIONS, TIMELINE, FAQS_DATA, QUIZ_QUESTIONS, LANGUAGES } from './utils/constants';
 import { useChat } from './hooks/useChat';
-
-/* Constants and data are now imported from utils/constants.js */
-
-/* Quiz data is now imported from utils/constants.js */
 
 /**
  * VoteSaathi Main Application Component
@@ -60,214 +62,19 @@ function App() {
 
   return (
     <div className="app-container" style={{ fontSize: `${fontSize}px` }}>
-      {/* Top Banner */}
-      <div className="top-banner" role="banner">
-        <div className="banner-left">
-          <span>🇮🇳 भारत सरकार | Government of India</span>
-        </div>
-        <div className="banner-right" role="toolbar" aria-label="Font size controls">
-          <button onClick={() => handleFontSize('increase')} aria-label="Increase font size" title="Increase font size">A+</button>
-          <button onClick={() => handleFontSize('reset')} aria-label="Reset font size" title="Reset font size">A</button>
-          <button onClick={() => handleFontSize('decrease')} aria-label="Decrease font size" title="Decrease font size">A-</button>
-        </div>
-      </div>
-
-      {/* Main Header */}
-      <header className="main-header">
-        <div className="logo-container">
-          <div className="logo-item">
-            <img src={eciLogo} alt="ECI Logo" />
-          </div>
-          <div className="logo-item" style={{ borderLeft: '1px solid #E2E8F0', paddingLeft: '20px' }}>
-            <div style={{ fontWeight: '700', fontSize: '1.2rem', color: '#003366' }}>भारत निर्वाचन आयोग</div>
-            <div style={{ fontSize: '0.9rem', color: '#64748B' }}>Election Commission of India</div>
-          </div>
-        </div>
-
-        <div className="votesaathi-brand" style={{ textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}>
-          <h1 style={{ color: '#003366', fontSize: '2.5rem', fontWeight: '800', margin: 0 }}>VoteSaathi</h1>
-          <span style={{ color: '#003366', fontSize: '1.1rem', fontWeight: '600' }}>Election Process Education Assistant</span>
-          <span style={{ color: '#003366', fontSize: '1rem', fontWeight: '500' }}>मतदाता जागरूकता, सशक्त लोकतंत्र</span>
-        </div>
-
-        <div className="logo-item">
-          <img src={chunaavLogo} alt="Chunaav Logo" />
-        </div>
-      </header>
-
-      {/* Navigation Bar */}
-      <nav className="top-nav" role="navigation" aria-label="Main navigation">
-        <button 
-          className={`nav-item ${activeTab === 'chat' ? 'active' : ''}`} 
-          onClick={() => setActiveTab('chat')}
-          aria-current={activeTab === 'chat' ? 'page' : undefined}
-          aria-label="Home - AI Assistant"
-        >
-          <Home size={18} aria-hidden="true" /> Home
-        </button>
-        <button 
-          className={`nav-item ${activeTab === 'process' ? 'active' : ''}`} 
-          onClick={() => setActiveTab('process')}
-          aria-current={activeTab === 'process' ? 'page' : undefined}
-          aria-label="Election Process"
-        >
-          <BookOpen size={18} aria-hidden="true" /> Election Process
-        </button>
-        <button 
-          className={`nav-item ${activeTab === 'timeline' ? 'active' : ''}`} 
-          onClick={() => setActiveTab('timeline')}
-          aria-current={activeTab === 'timeline' ? 'page' : undefined}
-          aria-label="Election Timeline"
-        >
-          <Clock size={18} aria-hidden="true" /> Timeline
-        </button>
-        <button 
-          className={`nav-item ${activeTab === 'faqs' ? 'active' : ''}`} 
-          onClick={() => setActiveTab('faqs')}
-          aria-current={activeTab === 'faqs' ? 'page' : undefined}
-          aria-label="Frequently Asked Questions"
-        >
-          <HelpCircle size={18} aria-hidden="true" /> FAQs
-        </button>
-        <button 
-          className={`nav-item ${activeTab === 'progress' ? 'active' : ''}`} 
-          onClick={() => setActiveTab('progress')}
-          aria-current={activeTab === 'progress' ? 'page' : undefined}
-          aria-label="My Learning Progress"
-        >
-          <BarChart2 size={18} aria-hidden="true" /> My Progress
-        </button>
-        <button 
-          className={`nav-item ${activeTab === 'resources' ? 'active' : ''}`} 
-          onClick={() => setActiveTab('resources')}
-          aria-current={activeTab === 'resources' ? 'page' : undefined}
-          aria-label="Official Resources"
-        >
-          <Info size={18} aria-hidden="true" /> Resources
-        </button>
-        <button 
-          className={`nav-item ${activeTab === 'contact' ? 'active' : ''}`} 
-          onClick={() => setActiveTab('contact')}
-          aria-current={activeTab === 'contact' ? 'page' : undefined}
-          aria-label="Contact Us"
-        >
-          <Phone size={18} aria-hidden="true" /> Contact Us
-        </button>
-      </nav>
+      <Header onFontSizeChange={handleFontSize} />
+      <Navigation activeTab={activeTab} onTabChange={setActiveTab} />
 
       {/* Dashboard Content */}
       <main id="main-content" className="dashboard-grid" role="main">
-        {/* Left Sidebar */}
-        <aside className="left-sidebar" role="complementary" aria-label="Sidebar navigation">
-          <div className="sidebar-menu">
-            <button className={`sidebar-btn ${activeTab === 'chat' ? 'active' : ''}`} onClick={() => setActiveTab('chat')}>
-              <MessageSquare size={18} /> AI Assistant
-            </button>
-            <button 
-              className={`sidebar-btn ${activeTab === 'registration' ? 'active' : ''}`} 
-              onClick={() => setActiveTab('registration')}
-            >
-              <User size={18} /> Voter Registration
-            </button>
-            <button 
-              className={`sidebar-btn ${activeTab === 'voting' ? 'active' : ''}`} 
-              onClick={() => setActiveTab('voting')}
-            >
-              <Compass size={18} /> Voting Process
-            </button>
-            <button 
-              className={`sidebar-btn ${activeTab === 'evm' ? 'active' : ''}`} 
-              onClick={() => setActiveTab('evm')}
-            >
-              <Info size={18} /> EVM information
-            </button>
-            <button 
-              className={`sidebar-btn ${activeTab === 'results' ? 'active' : ''}`} 
-              onClick={() => setActiveTab('results')}
-            >
-              <BarChart2 size={18} /> Results & Counting
-            </button>
-            <button 
-              className={`sidebar-btn ${activeTab === 'quiz' ? 'active' : ''}`} 
-              onClick={() => setActiveTab('quiz')}
-            >
-              <Award size={18} /> Quiz Zone
-            </button>
-            <button 
-              className={`sidebar-btn ${activeTab === 'badges' ? 'active' : ''}`} 
-              onClick={() => setActiveTab('badges')}
-            >
-              <Award size={18} /> My Badges
-            </button>
-            <div style={{ position: 'relative' }}>
-              <button 
-                className={`sidebar-btn ${showLanguages ? 'active' : ''}`} 
-                style={{ justifyContent: 'space-between' }}
-                onClick={() => setShowLanguages(!showLanguages)}
-              >
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                  <Languages size={18} /> Language / भाषा
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <span style={{ fontSize: '0.75rem', opacity: 0.7 }}>{language}</span>
-                  <ChevronDown size={14} style={{ transform: showLanguages ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }} />
-                </div>
-              </button>
-              
-              <AnimatePresence>
-                {showLanguages && (
-                  <motion.div 
-                    initial={{ opacity: 0, y: -10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -10 }}
-                    style={{ 
-                      position: 'absolute', 
-                      bottom: '100%', 
-                      left: '10px', 
-                      right: '10px', 
-                      background: 'white', 
-                      borderRadius: '12px', 
-                      boxShadow: '0 10px 25px rgba(0,0,0,0.1)', 
-                      border: '1px solid #E2E8F0',
-                      overflow: 'hidden',
-                      zIndex: 100,
-                      marginBottom: '8px'
-                    }}
-                  >
-                    {LANGUAGES.map(lang => (
-                      <button
-                        key={lang}
-                        className="sidebar-btn"
-                        style={{ 
-                          borderLeft: 'none', 
-                          padding: '12px 20px', 
-                          background: language === lang ? '#EEF2FF' : 'transparent',
-                          color: language === lang ? '#4F46E5' : 'inherit'
-                        }}
-                        onClick={() => {
-                          setLanguage(lang);
-                          setShowLanguages(false);
-                        }}
-                      >
-                        {lang}
-                      </button>
-                    ))}
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
-          </div>
-
-          <div className="helpline-card">
-            <div className="helpline-icon">
-              <Phone size={24} />
-            </div>
-            <h4>Helpline</h4>
-            <h2>1950</h2>
-            <span>(Toll Free)</span>
-            <span style={{ fontWeight: '600' }}>Available 24x7</span>
-          </div>
-        </aside>
+        <Sidebar
+          activeTab={activeTab}
+          onTabChange={setActiveTab}
+          language={language}
+          onLanguageChange={(lang) => { setLanguage(lang); setShowLanguages(false); }}
+          showLanguages={showLanguages}
+          onToggleLanguages={() => setShowLanguages(!showLanguages)}
+        />
 
         {/* Center Content Area */}
         <section className="chat-section">
@@ -705,181 +512,46 @@ function App() {
               </div>
             </div>
           ) : activeTab === 'chat' ? (
-            <>
-              <div className="chat-header">
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                  <h3 style={{ color: '#003366' }}>AI Election Assistant</h3>
-                  <div className="status-indicator">
-                    <div className="dot"></div> Online
-                  </div>
-                </div>
-              </div>
-
-              <div className="chat-messages" ref={scrollRef} role="log" aria-label="Chat messages" aria-live="polite">
-                {messages.map((msg) => (
-                  <div key={msg.id} className={`message ${msg.role === 'user' ? 'user-message' : 'ai-message'}`}>
-                    <div style={{ whiteSpace: 'pre-wrap' }}>{msg.content}</div>
-                    <div style={{ fontSize: '0.7rem', textAlign: 'right', marginTop: '4px', opacity: 0.7 }}>
-                      {msg.time} {msg.role === 'user' && '✓✓'}
-                    </div>
-                  </div>
-                ))}
-                {isLoading && (
-                  <div className="message ai-message">
-                    <Loader2 className="animate-spin" size={18} />
-                  </div>
-                )}
-              </div>
-
-              <div className="quick-ask">
-                <h4>Quick Ask</h4>
-                <div className="suggestion-btns">
-                  {SUGGESTIONS.map((s, idx) => (
-                    <button key={idx} className="suggestion-btn" onClick={() => handleSend(s.en)}>
-                      {s.en}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div className="chat-input-area">
-                <div className="input-container">
-                  <input 
-                    type="text" 
-                    placeholder="Type your question here..." 
-                    value={input}
-                    onChange={(e) => setInput(e.target.value)}
-                    onKeyDown={(e) => e.key === 'Enter' && handleSend()}
-                  />
-                  <button className="icon-btn" aria-label="Voice input"><Mic size={20} aria-hidden="true" /></button>
-                </div>
-                <button className="send-btn" onClick={() => handleSend()} aria-label="Send message">
-                  <Send size={20} aria-hidden="true" />
-                </button>
-              </div>
-            </>
+            <ChatView
+              messages={messages}
+              input={input}
+              setInput={setInput}
+              isLoading={isLoading}
+              handleSend={handleSend}
+              scrollRef={scrollRef}
+            />
           ) : activeTab === 'quiz' ? (
-            <div className="registration-view">
-              <div className="view-header">
-                <Award size={24} color="#003366" />
-                <h2>Quiz Zone: Test Your Knowledge</h2>
-              </div>
-
-              {!quizFinished ? (
-                <div className="quiz-container">
-                  <div className="quiz-progress">
-                    Question {currentQuestion + 1} of {QUIZ_QUESTIONS.length}
-                    <div className="progress-bar-container" style={{ height: '8px', marginTop: '10px' }}>
-                      <div 
-                        className="progress-fill" 
-                        style={{ width: `${((currentQuestion + 1) / QUIZ_QUESTIONS.length) * 100}%` }}
-                      ></div>
-                    </div>
-                  </div>
-
-                  <div className="quiz-card">
-                    <h3 className="question-text">{QUIZ_QUESTIONS[currentQuestion].question}</h3>
-                    <div className="options-grid">
-                      {QUIZ_QUESTIONS[currentQuestion].options.map((opt, idx) => (
-                        <button
-                          key={idx}
-                          className={`option-btn ${selectedOption === idx ? 'selected' : ''} ${
-                            showExplanation && idx === QUIZ_QUESTIONS[currentQuestion].correct ? 'correct' : ''
-                          } ${
-                            showExplanation && selectedOption === idx && idx !== QUIZ_QUESTIONS[currentQuestion].correct ? 'wrong' : ''
-                          }`}
-                          onClick={() => !showExplanation && setSelectedOption(idx)}
-                          disabled={showExplanation}
-                        >
-                          <div className="option-radio">
-                            {selectedOption === idx && <div className="radio-inner"></div>}
-                          </div>
-                          {opt}
-                        </button>
-                      ))}
-                    </div>
-
-                    {showExplanation && (
-                      <motion.div 
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        className={`explanation-box ${selectedOption === QUIZ_QUESTIONS[currentQuestion].correct ? 'success' : 'error'}`}
-                      >
-                        <strong>{selectedOption === QUIZ_QUESTIONS[currentQuestion].correct ? 'Correct!' : 'Incorrect'}</strong>
-                        <p>{QUIZ_QUESTIONS[currentQuestion].explanation}</p>
-                      </motion.div>
-                    )}
-
-                    <div className="quiz-actions">
-                      {!showExplanation ? (
-                        <button 
-                          className="primary-btn" 
-                          disabled={selectedOption === null}
-                          onClick={() => {
-                            setShowExplanation(true);
-                            if (selectedOption === QUIZ_QUESTIONS[currentQuestion].correct) {
-                              setQuizScore(prev => prev + 1);
-                            }
-                          }}
-                        >
-                          Submit Answer
-                        </button>
-                      ) : (
-                        <button 
-                          className="primary-btn"
-                          onClick={() => {
-                            if (currentQuestion + 1 < QUIZ_QUESTIONS.length) {
-                              setCurrentQuestion(prev => prev + 1);
-                              setSelectedOption(null);
-                              setShowExplanation(false);
-                            } else {
-                              setQuizFinished(true);
-                            }
-                          }}
-                        >
-                          {currentQuestion + 1 < QUIZ_QUESTIONS.length ? 'Next Question' : 'View Results'}
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              ) : (
-                <div className="quiz-result-view">
-                  <div className="result-card">
-                    <div className="result-icon">
-                      <Award size={48} color="#F59E0B" />
-                    </div>
-                    <h3>Quiz Completed!</h3>
-                    <div className="final-score">
-                      <span>Your Score</span>
-                      <h2>{quizScore} / {QUIZ_QUESTIONS.length}</h2>
-                    </div>
-                    <p>
-                      {quizScore === QUIZ_QUESTIONS.length 
-                        ? "Perfect score! You are a master of the election process." 
-                        : "Good job! Keep learning to become a more informed citizen."}
-                    </p>
-                    <div className="result-actions">
-                      <button 
-                        className="primary-btn" 
-                        onClick={() => {
-                          setCurrentQuestion(0);
-                          setQuizScore(0);
-                          setSelectedOption(null);
-                          setShowExplanation(false);
-                          setQuizFinished(false);
-                        }}
-                      >
-                        Try Again
-                      </button>
-                      <button className="secondary-btn" onClick={() => setActiveTab('chat')}>
-                        Back to Assistant
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
+            <QuizView
+              currentQuestion={currentQuestion}
+              quizScore={quizScore}
+              selectedOption={selectedOption}
+              showExplanation={showExplanation}
+              quizFinished={quizFinished}
+              onSelectOption={setSelectedOption}
+              onSubmitAnswer={() => {
+                setShowExplanation(true);
+                if (selectedOption === QUIZ_QUESTIONS[currentQuestion].correct) {
+                  setQuizScore(prev => prev + 1);
+                }
+              }}
+              onNextQuestion={() => {
+                if (currentQuestion + 1 < QUIZ_QUESTIONS.length) {
+                  setCurrentQuestion(prev => prev + 1);
+                  setSelectedOption(null);
+                  setShowExplanation(false);
+                } else {
+                  setQuizFinished(true);
+                }
+              }}
+              onRestart={() => {
+                setCurrentQuestion(0);
+                setQuizScore(0);
+                setSelectedOption(null);
+                setShowExplanation(false);
+                setQuizFinished(false);
+              }}
+              onBackToChat={() => setActiveTab('chat')}
+            />
           ) : activeTab === 'results' ? (
             <div className="registration-view">
               <div className="view-header">
@@ -1156,77 +828,13 @@ function App() {
           )}
         </section>
 
-        {/* Right Panel */}
-        <aside className="right-panel" role="complementary" aria-label="Election information panel">
-          <div className="info-card">
-            <div className="card-header">
-              <Calendar size={18} /> Election Timeline
-            </div>
-            <div className="timeline-list">
-              {TIMELINE.map((item, idx) => (
-                <div key={idx} className="timeline-item">
-                  <div className="item-label">
-                    <div className="timeline-dot" style={{ background: item.color }}></div>
-                    {item.stage}
-                  </div>
-                  <div style={{ color: '#64748B' }}>{item.date}</div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <div className="info-card" style={{ background: '#FFF7ED', border: '1px solid #FFEDD5' }}>
-            <div className="card-header" style={{ color: '#9A3412' }}>
-              <HelpCircle size={18} /> Did You Know?
-            </div>
-            <p style={{ fontSize: '0.9rem', color: '#9A3412', lineHeight: '1.6' }}>
-              EVMs are fully secure, reliable, and 100% tamper-proof.
-            </p>
-            <a href="#" style={{ color: '#003366', fontSize: '0.85rem', fontWeight: '600', marginTop: '10px', display: 'block' }}>
-              Learn More →
-            </a>
-          </div>
-
-          <div className="info-card">
-            <div className="card-header">
-              <BarChart2 size={18} /> My Progress
-            </div>
-            <div style={{ fontSize: '0.9rem', color: '#64748B' }}>Learning Progress</div>
-            <div className="progress-bar-container">
-              <div className="progress-fill" style={{ width: '60%' }}></div>
-            </div>
-            <div style={{ textAlign: 'right', fontSize: '0.85rem', fontWeight: '600' }}>60%</div>
-            
-            <div style={{ fontSize: '0.9rem', color: '#64748B', marginTop: '15px' }}>Badges Earned</div>
-            <div className="badge-row">
-              <div className="badge" style={{ color: '#10B981' }}><ShieldCheck size={20} /></div>
-              <div className="badge" style={{ color: '#3B82F6' }}><BookOpen size={20} /></div>
-              <div className="badge" style={{ color: '#F59E0B' }}><Award size={20} /></div>
-            </div>
-            <a href="#" style={{ color: '#003366', fontSize: '0.85rem', fontWeight: '600', marginTop: '15px', display: 'block', textAlign: 'right' }}>
-              View All →
-            </a>
-          </div>
-        </aside>
+        <RightPanel />
       </main>
 
-      {/* Footer */}
-      <footer className="main-footer" role="contentinfo">
-        <div className="footer-top">
-          <div style={{ fontSize: '0.9rem' }}>© 2026 Election Commission of India. All Rights Reserved.</div>
-          <div className="footer-links">
-            <a href="#">Privacy Policy</a>
-            <a href="#">Terms of Use</a>
-            <a href="#">Accessibility Statement</a>
-            <a href="#">Help</a>
-          </div>
-        </div>
-        <div className="footer-bottom">
-          <span>भारत निर्वाचन आयोग की आधिकारिक वेबसाइट</span>
-        </div>
-      </footer>
+      <Footer />
     </div>
   );
 }
 
 export default App;
+
