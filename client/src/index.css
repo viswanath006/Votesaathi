@@ -1951,5 +1951,83 @@ body {
   width: 100%;
 }
 
+/* Skip Navigation Link — Accessibility */
+.skip-link {
+  position: absolute;
+  top: -100%;
+  left: 0;
+  background: #003366;
+  color: white;
+  padding: 12px 24px;
+  z-index: 9999;
+  font-weight: 700;
+  text-decoration: none;
+  border-radius: 0 0 8px 0;
+  transition: top 0.3s;
+}
+.skip-link:focus {
+  top: 0;
+}
 
+/* Focus Visible — Keyboard Navigation Indicators */
+*:focus-visible {
+  outline: 3px solid #3B82F6;
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+button:focus-visible {
+  outline: 3px solid #3B82F6;
+  outline-offset: 2px;
+}
+input:focus-visible, textarea:focus-visible {
+  outline: 3px solid #3B82F6;
+  outline-offset: 1px;
+}
+
+/* Banner Font Size Buttons */
+.banner-right button {
+  background: transparent;
+  border: 1px solid rgba(255,255,255,0.3);
+  color: white;
+  padding: 2px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.8rem;
+  font-weight: 600;
+  transition: all 0.2s;
+}
+.banner-right button:hover {
+  background: rgba(255,255,255,0.15);
+  border-color: rgba(255,255,255,0.6);
+}
+
+/* Reduced Motion — Accessibility */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* High Contrast Mode Support */
+@media (prefers-contrast: high) {
+  :root {
+    --border: #000000;
+    --text-muted: #1E293B;
+  }
+  .message { border: 2px solid #000; }
+  .nav-item { border-bottom-width: 4px; }
+}
+
+/* Print Styles */
+@media print {
+  .top-banner, .top-nav, .left-sidebar, .right-panel, .chat-input-area, .main-footer {
+    display: none !important;
+  }
+  .dashboard-grid {
+    grid-template-columns: 1fr !important;
+  }
+}
 

@@ -1,92 +1,34 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback, useMemo, lazy, Suspense } from 'react';
 import { Send, Mic, Languages, User, Bot, HelpCircle, Loader2, Compass, Award, Calendar, MapPin, Info, ShieldCheck, PlayCircle, Phone, Home, BookOpen, Clock, BarChart2, MessageSquare, Search, ChevronDown, FileText } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
-// Import local assets (generated)
+// Import local assets
 import eciLogo from './assets/eci_logo.png';
 import voteSaathiLogo from './assets/votesaathi_logo.png';
 import chunaavLogo from './assets/chunaav_logo.png';
 
-const SUGGESTIONS = [
-  { hi: "वोट देने की प्रक्रिया", en: "How to vote?" },
-  { hi: "कौन कर सकता है मतदान?", en: "Who can vote?" },
-  { hi: "आवश्यक दस्तावेज", en: "Required documents" },
-  { hi: "EVM क्या है?", en: "What is EVM?" },
-  { hi: "मतदान केंद्र कैसे खोजें?", en: "How to find polling station?" }
-];
+// Import extracted modules for code quality
+import { SUGGESTIONS, TIMELINE, FAQS_DATA, QUIZ_QUESTIONS, LANGUAGES } from './utils/constants';
+import { useChat } from './hooks/useChat';
 
-const TIMELINE = [
-  { stage: "Voter Registration", date: "01 Jun — 15 Jan 2026", color: "#10B981" },
-  { stage: "Nomination", date: "20 Jan — 27 Jan 2026", color: "#3B82F6" },
-  { stage: "Campaign Period", date: "28 Jan — 10 Feb 2026", color: "#F59E0B" },
-  { stage: "Polling Day", date: "25 Feb 2026", color: "#EF4444" },
-  { stage: "Counting & Results", date: "02 March 2026", color: "#8B5CF6" }
-];
+/* Constants and data are now imported from utils/constants.js */
 
-const FAQS_DATA = [
-  { 
-    q: "Who can vote in India?", 
-    a: "Every Indian citizen who has reached the age of 18 on the qualifying date (usually 1st January of the year) is eligible to be registered as a voter in the constituency where he/she is ordinarily resident." 
-  },
-  { 
-    q: "How to register as a new voter?", 
-    a: "You can register online via the Voter's Portal (voters.eci.gov.in) or offline by filling Form 6 and submitting it to the Electoral Registration Officer (ERO) or Booth Level Officer (BLO)." 
-  },
-  { 
-    q: "What documents are required for registration?", 
-    a: "You need a passport-sized photograph, an age proof (like a birth certificate or 10th marksheet), and an address proof (like Aadhaar card, electricity bill, or passport)." 
-  },
-  { 
-    q: "What is an EVM?", 
-    a: "An Electronic Voting Machine (EVM) is a device used to cast and count votes. It consists of a Balloting Unit and a Control Unit, designed to be 100% tamper-proof and secure." 
-  },
-  { 
-    q: "How to check if my name is in the voter list?", 
-    a: "You can check your name on the official Electoral Search portal (search.eci.gov.in) by entering your EPIC number or personal details." 
-  }
-];
+/* Quiz data is now imported from utils/constants.js */
 
-const QUIZ_QUESTIONS = [
-  {
-    question: "What is the minimum age to be eligible to vote in India?",
-    options: ["18 years", "21 years", "25 years", "16 years"],
-    correct: 0,
-    explanation: "As per the Constitution of India, any citizen aged 18 or above is eligible to vote."
-  },
-  {
-    question: "Can an EVM be hacked remotely via Wi-Fi or Bluetooth?",
-    options: ["Yes, if signal is strong", "No, EVMs have no network connectivity", "Only by experts", "Yes, during counting"],
-    correct: 1,
-    explanation: "EVMs are stand-alone machines with no network, Bluetooth, or Wi-Fi connectivity."
-  },
-  {
-    question: "What does VVPAT stand for?",
-    options: [
-      "Voter Verified Paper Audit Trail",
-      "Voter Verification Process and Tracking",
-      "Visual Voter Paper Accountability Tool",
-      "Voter Validated Polling Access Terminal"
-    ],
-    correct: 0,
-    explanation: "VVPAT stands for Voter Verifiable Paper Audit Trail."
-  }
-];
-
+/**
+ * VoteSaathi Main Application Component
+ * @description Root component for the Election Process Education Assistant.
+ * Provides AI chat, quiz, timeline, FAQs, and educational modules.
+ * @component
+ */
 function App() {
   const [activeTab, setActiveTab] = useState('chat');
-  const [messages, setMessages] = useState([
-    { 
-      role: 'ai', 
-      content: '👋 Hello! I am your VoteSaathi Assistant.\nYou can ask me anything about the election process, voting, registration, EVMs, and more.', 
-      time: '10:30 AM',
-      id: 1 
-    }
-  ]);
-  const [input, setInput] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
   const [language, setLanguage] = useState('English');
   const [showLanguages, setShowLanguages] = useState(false);
-  const [isListening, setIsListening] = useState(false);
+  const [fontSize, setFontSize] = useState(16);
+
+  // Use custom chat hook for clean separation of concerns
+  const { messages, input, setInput, isLoading, handleSend, scrollRef } = useChat(language);
 
   // Quiz State
   const [currentQuestion, setCurrentQuestion] = useState(0);
@@ -99,60 +41,34 @@ function App() {
   const [faqSearch, setFaqSearch] = useState('');
   const [expandedFaq, setExpandedFaq] = useState(null);
 
-  const LANGUAGES = ['English', 'Hindi', 'Telugu'];
+  /** Memoized filtered FAQs for efficiency */
+  const filteredFaqs = useMemo(() =>
+    FAQS_DATA.filter(faq =>
+      faq.q.toLowerCase().includes(faqSearch.toLowerCase()) ||
+      faq.a.toLowerCase().includes(faqSearch.toLowerCase())
+    ), [faqSearch]
+  );
 
-  const scrollRef = useRef(null);
-
-  useEffect(() => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
-    }
-  }, [messages]);
-
-  const handleSend = async (text) => {
-    const messageText = text || input;
-    if (!messageText.trim()) return;
-
-    const userMsg = { role: 'user', content: messageText, time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }), id: Date.now() };
-    setMessages(prev => [...prev, userMsg]);
-    setInput('');
-    setIsLoading(true);
-
-    try {
-      const response = await fetch('https://votesaathi.onrender.com/api/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: messageText, language })
-      });
-
-      const data = await response.json();
-      const aiMsg = { 
-        role: 'ai', 
-        content: data.response, 
-        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }), 
-        id: Date.now() + 1 
-      };
-      setMessages(prev => [...prev, aiMsg]);
-    } catch (error) {
-      console.error('Error:', error);
-      const errorMsg = { role: 'ai', content: 'क्षमा करें, सर्वर से कनेक्ट करने में समस्या हो रही है।', time: 'Error', id: Date.now() + 1 };
-      setMessages(prev => [...prev, errorMsg]);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  /** Font size accessibility controls */
+  const handleFontSize = useCallback((action) => {
+    setFontSize(prev => {
+      if (action === 'increase') return Math.min(prev + 2, 24);
+      if (action === 'decrease') return Math.max(prev - 2, 12);
+      return 16;
+    });
+  }, []);
 
   return (
-    <div className="app-container">
+    <div className="app-container" style={{ fontSize: `${fontSize}px` }}>
       {/* Top Banner */}
-      <div className="top-banner">
+      <div className="top-banner" role="banner">
         <div className="banner-left">
           <span>🇮🇳 भारत सरकार | Government of India</span>
         </div>
-        <div className="banner-right">
-          <span>A+</span>
-          <span>A</span>
-          <span>A-</span>
+        <div className="banner-right" role="toolbar" aria-label="Font size controls">
+          <button onClick={() => handleFontSize('increase')} aria-label="Increase font size" title="Increase font size">A+</button>
+          <button onClick={() => handleFontSize('reset')} aria-label="Reset font size" title="Reset font size">A</button>
+          <button onClick={() => handleFontSize('decrease')} aria-label="Decrease font size" title="Decrease font size">A-</button>
         </div>
       </div>
 
@@ -180,55 +96,69 @@ function App() {
       </header>
 
       {/* Navigation Bar */}
-      <nav className="top-nav">
+      <nav className="top-nav" role="navigation" aria-label="Main navigation">
         <button 
           className={`nav-item ${activeTab === 'chat' ? 'active' : ''}`} 
           onClick={() => setActiveTab('chat')}
+          aria-current={activeTab === 'chat' ? 'page' : undefined}
+          aria-label="Home - AI Assistant"
         >
-          <Home size={18} /> Home
+          <Home size={18} aria-hidden="true" /> Home
         </button>
         <button 
           className={`nav-item ${activeTab === 'process' ? 'active' : ''}`} 
           onClick={() => setActiveTab('process')}
+          aria-current={activeTab === 'process' ? 'page' : undefined}
+          aria-label="Election Process"
         >
-          <BookOpen size={18} /> Election Process
+          <BookOpen size={18} aria-hidden="true" /> Election Process
         </button>
         <button 
           className={`nav-item ${activeTab === 'timeline' ? 'active' : ''}`} 
           onClick={() => setActiveTab('timeline')}
+          aria-current={activeTab === 'timeline' ? 'page' : undefined}
+          aria-label="Election Timeline"
         >
-          <Clock size={18} /> Timeline
+          <Clock size={18} aria-hidden="true" /> Timeline
         </button>
         <button 
           className={`nav-item ${activeTab === 'faqs' ? 'active' : ''}`} 
           onClick={() => setActiveTab('faqs')}
+          aria-current={activeTab === 'faqs' ? 'page' : undefined}
+          aria-label="Frequently Asked Questions"
         >
-          <HelpCircle size={18} /> FAQs
+          <HelpCircle size={18} aria-hidden="true" /> FAQs
         </button>
         <button 
           className={`nav-item ${activeTab === 'progress' ? 'active' : ''}`} 
           onClick={() => setActiveTab('progress')}
+          aria-current={activeTab === 'progress' ? 'page' : undefined}
+          aria-label="My Learning Progress"
         >
-          <BarChart2 size={18} /> My Progress
+          <BarChart2 size={18} aria-hidden="true" /> My Progress
         </button>
         <button 
           className={`nav-item ${activeTab === 'resources' ? 'active' : ''}`} 
           onClick={() => setActiveTab('resources')}
+          aria-current={activeTab === 'resources' ? 'page' : undefined}
+          aria-label="Official Resources"
         >
-          <Info size={18} /> Resources
+          <Info size={18} aria-hidden="true" /> Resources
         </button>
         <button 
           className={`nav-item ${activeTab === 'contact' ? 'active' : ''}`} 
           onClick={() => setActiveTab('contact')}
+          aria-current={activeTab === 'contact' ? 'page' : undefined}
+          aria-label="Contact Us"
         >
-          <Phone size={18} /> Contact Us
+          <Phone size={18} aria-hidden="true" /> Contact Us
         </button>
       </nav>
 
       {/* Dashboard Content */}
-      <main className="dashboard-grid">
+      <main id="main-content" className="dashboard-grid" role="main">
         {/* Left Sidebar */}
-        <aside className="left-sidebar">
+        <aside className="left-sidebar" role="complementary" aria-label="Sidebar navigation">
           <div className="sidebar-menu">
             <button className={`sidebar-btn ${activeTab === 'chat' ? 'active' : ''}`} onClick={() => setActiveTab('chat')}>
               <MessageSquare size={18} /> AI Assistant
@@ -566,15 +496,12 @@ function App() {
                 />
               </div>
 
-              <div className="faq-accordion">
-                {FAQS_DATA.filter(faq => 
-                  faq.q.toLowerCase().includes(faqSearch.toLowerCase()) || 
-                  faq.a.toLowerCase().includes(faqSearch.toLowerCase())
-                ).map((faq, idx) => (
+              <div className="faq-accordion" role="region" aria-label="FAQ list">
+                {filteredFaqs.map((faq, idx) => (
                   <div key={idx} className={`faq-item ${expandedFaq === idx ? 'expanded' : ''}`}>
-                    <button className="faq-question" onClick={() => setExpandedFaq(expandedFaq === idx ? null : idx)}>
+                    <button className="faq-question" onClick={() => setExpandedFaq(expandedFaq === idx ? null : idx)} aria-expanded={expandedFaq === idx} aria-controls={`faq-answer-${idx}`}>
                       <span>{faq.q}</span>
-                      <ChevronDown size={18} style={{ transform: expandedFaq === idx ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }} />
+                      <ChevronDown size={18} aria-hidden="true" style={{ transform: expandedFaq === idx ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }} />
                     </button>
                     <AnimatePresence>
                       {expandedFaq === idx && (
@@ -788,7 +715,7 @@ function App() {
                 </div>
               </div>
 
-              <div className="chat-messages" ref={scrollRef}>
+              <div className="chat-messages" ref={scrollRef} role="log" aria-label="Chat messages" aria-live="polite">
                 {messages.map((msg) => (
                   <div key={msg.id} className={`message ${msg.role === 'user' ? 'user-message' : 'ai-message'}`}>
                     <div style={{ whiteSpace: 'pre-wrap' }}>{msg.content}</div>
@@ -822,12 +749,12 @@ function App() {
                     placeholder="Type your question here..." 
                     value={input}
                     onChange={(e) => setInput(e.target.value)}
-                    onKeyPress={(e) => e.key === 'Enter' && handleSend()}
+                    onKeyDown={(e) => e.key === 'Enter' && handleSend()}
                   />
-                  <button className="icon-btn"><Mic size={20} /></button>
+                  <button className="icon-btn" aria-label="Voice input"><Mic size={20} aria-hidden="true" /></button>
                 </div>
-                <button className="send-btn" onClick={() => handleSend()}>
-                  <Send size={20} />
+                <button className="send-btn" onClick={() => handleSend()} aria-label="Send message">
+                  <Send size={20} aria-hidden="true" />
                 </button>
               </div>
             </>
@@ -1230,7 +1157,7 @@ function App() {
         </section>
 
         {/* Right Panel */}
-        <aside className="right-panel">
+        <aside className="right-panel" role="complementary" aria-label="Election information panel">
           <div className="info-card">
             <div className="card-header">
               <Calendar size={18} /> Election Timeline
@@ -1284,7 +1211,7 @@ function App() {
       </main>
 
       {/* Footer */}
-      <footer className="main-footer">
+      <footer className="main-footer" role="contentinfo">
         <div className="footer-top">
           <div style={{ fontSize: '0.9rem' }}>© 2026 Election Commission of India. All Rights Reserved.</div>
           <div className="footer-links">
